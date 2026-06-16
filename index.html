@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Poster Generator</title>
+
+    <style>
+        @font-face {
+            font-family: "Juventus";
+            src: url("juventus.woff2") format("woff2"),
+                url("juventus.ttf") format("truetype");
+        }
+
+        body {
+            margin: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        button,
+        select {
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        #canvas {
+            width: 1080px;
+            height: 1080px;
+            position: relative;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .guide-h,
+        .guide-v {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+            display: none;
+            z-index: 999;
+        }
+
+        .guide-h {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+        }
+
+        .guide-v {
+            height: 100%;
+            width: 1px;
+            left: 50%;
+        }
+
+        #bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .red-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0.15),
+                    rgba(0, 0, 0, 0.9));
+        }
+
+        .logo {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            top: 25px;
+        }
+
+        .logo.left {
+            left: 25px;
+        }
+
+        .logo.right {
+            right: 25px;
+        }
+
+        .draggable {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+        }
+
+        .title,
+        .sub,
+        .btn {
+            color: #fff;
+            font-family: "Juventus", Arial, sans-serif;
+            text-align: center;
+            width: max-content;
+        }
+
+        .title {
+            font-size: 34px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sub {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            display: inline-block;
+            background: #d40000;
+            padding: 6px 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #d40000;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        [contenteditable="true"] {
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <input type="file" id="bgUpload">
+        <input type="text" id="bgURL" placeholder="Player Image URL">
+        <button onclick="setImage('bgURL','#bg')">Set Player URL</button>
+
+        <input type="file" id="logo1Upload">
+        <input type="text" id="logo1URL" placeholder="Logo 1 URL">
+        <button onclick="setImage('logo1URL','.logo.left')">Set Logo 1 URL</button>
+
+        <input type="file" id="logo2Upload">
+        <input type="text" id="logo2URL" placeholder="Logo 2 URL">
+        <button onclick="setImage('logo2URL','.logo.right')">Set Logo 2 URL</button>
+
+        <select id="fontPicker" onchange="changeFont(this.value)">
+            <option value="Juventus">Juventus</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Bebas Neue">Bebas Neue</option>
+            <option value="Poppins">Poppins</option>
+        </select>
+
+        <select id="sizeSelect">
+            <option value="1080">1080 × 1080</option>
+            <option value="2000">2000 × 2000</option>
+        </select>
+
+        <button id="downloadBtn">Download Poster</button>
+    </div>
+
+    <div id="canvas">
+
+        <div class="guide-h" id="guideH"></div>
+        <div class="guide-v" id="guideV"></div>
+
+        <img id="bg" src="player.jpg">
+        <div class="red-bg"></div>
+
+        <img class="logo left" src="logo1.png">
+        <img class="logo right" src="logo2.png">
+
+        <div id="title" class="draggable title" contenteditable="true" style="top:140px; left:540px;">
+            THE STRUGGLE FOR MINUTES:
+        </div>
+
+        <div id="sub" class="draggable sub" contenteditable="true" style="top:520px; left:540px;">
+            <span class="highlight">MAX IBRAHIMOVIĆ</span> AT
+            <span class="highlight">AJAX</span>
+        </div>
+
+        <div id="btn" class="draggable btn" contenteditable="true" style="top:780px; left:540px;">
+            READ MORE
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        const fonts = {
+            "Roboto": "Roboto:wght@400;700;900",
+            "Montserrat": "Montserrat:wght@400;700;900",
+            "Bebas Neue": "Bebas+Neue",
+            "Poppins": "Poppins:wght@400;700;900"
+        };
+
+        function changeFont(f) {
+            if (f === "Juventus") {
+                document.getElementById("canvas").style.fontFamily = "Juventus, Arial";
+                return;
+            }
+
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = `https://fonts.googleapis.com/css2?family=${fonts[f]}&display=swap`;
+            document.head.appendChild(link);
+
+            document.getElementById("canvas").style.fontFamily = `"${f}", Arial`;
+        }
+
+        document.getElementById("downloadBtn").addEventListener("click", () => {
+            const size = parseInt(document.getElementById("sizeSelect").value);
+
+            html2canvas(document.getElementById("canvas"), {
+                scale: size / 1080,
+                useCORS: true,
+                backgroundColor: null,
+                width: 1080,
+                height: 1080
+            }).then(canvas => {
+                const a = document.createElement("a");
+                a.download = `football-poster-${size}.png`;
+                a.href = canvas.toDataURL("image/png");
+                a.click();
+            });
+        });
+
+        function bindUpload(id, target) {
+            document.getElementById(id).addEventListener("change", e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    document.querySelector(target).src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        bindUpload("bgUpload", "#bg");
+        bindUpload("logo1Upload", ".logo.left");
+        bindUpload("logo2Upload", ".logo.right");
+
+        function setImage(id, sel) {
+            const url = document.getElementById(id).value.trim();
+            if (url) document.querySelector(sel).src = url;
+        }
+
+        const guideH = document.getElementById("guideH");
+        const guideV = document.getElementById("guideV");
+
+        let active = null;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        document.querySelectorAll(".draggable").forEach(el => {
+            el.addEventListener("mousedown", (e) => {
+                active = el;
+                offsetX = e.clientX - el.offsetLeft;
+                offsetY = e.clientY - el.offsetTop;
+            });
+        });
+
+        // 🔥 CANVA / FIGMA STYLE SNAP (CENTER + GRID)
+        document.addEventListener("mousemove", (e) => {
+            if (!active) return;
+
+            let x = e.clientX - offsetX;
+            let y = e.clientY - offsetY;
+
+            const cx = 540;
+            const cy = 540;
+
+            const SNAP_CENTER = 20;
+            const GRID = 20;
+
+            guideH.style.display = "block";
+            guideV.style.display = "block";
+
+            guideH.style.top = cy + "px";
+            guideV.style.left = cx + "px";
+
+            // CENTER SNAP
+            if (Math.abs(x - cx) < SNAP_CENTER) {
+                x = cx;
+                guideV.style.background = "red";
+            } else {
+                guideV.style.background = "rgba(255,255,255,0.25)";
+            }
+
+            if (Math.abs(y - cy) < SNAP_CENTER) {
+                y = cy;
+                guideH.style.background = "red";
+            } else {
+                guideH.style.background = "rgba(255,255,255,0.25)";
+            }
+
+            // GRID SNAP (CANVA STYLE)
+            x = Math.round(x / GRID) * GRID;
+            y = Math.round(y / GRID) * GRID;
+
+            active.style.left = x + "px";
+            active.style.top = y + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+            active = null;
+            guideH.style.display = "none";
+            guideV.style.display = "none";
+        });
+    </script>
+
+</body>
+
+</html>

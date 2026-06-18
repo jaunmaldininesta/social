@@ -185,6 +185,7 @@
         }
 
         input[type="text"],
+        input[type="number"],
         select {
             padding: 14px;
             font-size: 13px;
@@ -201,6 +202,7 @@
         }
 
         input[type="text"]:focus,
+        input[type="number"]:focus,
         select:focus {
             border-color: #e11d48;
             box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -301,11 +303,14 @@
             transform: scale(1.3);
         }
 
-        .slider-value {
-            min-width: 45px;
-            text-align: right;
+        /* Styles for Specific Number inputs */
+        .axis-num-input {
+            width: 75px !important;
+            padding: 6px 8px !important;
+            text-align: center;
             font-weight: 700;
-            color: #e11d48;
+            color: #e11d48 !important;
+            border-color: rgba(225, 29, 72, 0.2) !important;
         }
 
         /* Custom Toggle Pill Controls */
@@ -781,7 +786,7 @@
                 <div class="slider-group" id="gradAngleGroup">
                     <label for="gradAngleSlider">Light Ray Angle:</label>
                     <input type="range" id="gradAngleSlider" min="0" max="360" value="180">
-                    <span id="gradAngleValue" class="slider-value">180°</span>
+                    <input type="number" id="gradAngleNum" min="0" max="360" value="180" class="axis-num-input">
                 </div>
                 <div class="slider-group">
                     <label for="gradOpacitySlider">Vignette Darkness:</label>
@@ -795,12 +800,12 @@
                 <div class="slider-group">
                     <label for="gradXSlider">Translate X Axis:</label>
                     <input type="range" id="gradXSlider" min="-1080" max="1080" value="0">
-                    <span id="gradXValue" class="slider-value">0px</span>
+                    <input type="number" id="gradXNum" min="-1080" max="1080" value="0" class="axis-num-input">
                 </div>
                 <div class="slider-group">
                     <label for="gradYSlider">Translate Y Axis:</label>
                     <input type="range" id="gradYSlider" min="-1080" max="1080" value="0">
-                    <span id="gradYValue" class="slider-value">0px</span>
+                    <input type="number" id="gradYNum" min="-1080" max="1080" value="0" class="axis-num-input">
                 </div>
             </div>
 
@@ -914,15 +919,16 @@
         const gradientLayer = document.getElementById("gradientLayer");
         const gradTypeSelect = document.getElementById("gradTypeSelect");
         const gradAngleSlider = document.getElementById("gradAngleSlider");
-        const gradAngleValue = document.getElementById("gradAngleValue");
+        const gradAngleNum = document.getElementById("gradAngleNum");
         const gradAngleGroup = document.getElementById("gradAngleGroup");
         const gradOpacitySlider = document.getElementById("gradOpacitySlider");
         const gradOpacityValue = document.getElementById("gradOpacityValue");
         const gradColorPicker = document.getElementById("gradColorPicker");
+
         const gradXSlider = document.getElementById("gradXSlider");
         const gradYSlider = document.getElementById("gradYSlider");
-        const gradXValue = document.getElementById("gradXValue");
-        const gradYValue = document.getElementById("gradYValue");
+        const gradXNum = document.getElementById("gradXNum");
+        const gradYNum = document.getElementById("gradYNum");
 
         const lockPlayerCheck = document.getElementById("lockPlayerCheck");
         const lockGradientCheck = document.getElementById("lockGradientCheck");
@@ -940,7 +946,27 @@
         let startTouchesDist = 0;
         let touchStartPanX = 0, touchStartPanY = 0;
 
+        // Sliders থেকে পরিবর্তন হলে এঙ্গেল আপডেট ও Number Input সিনক্রোনাইজ হবে
+        function updateGradientFromSlider() {
+            gradAngleNum.value = gradAngleSlider.value;
+            applyGradientRender();
+        }
+
+        // Number Inputs থেকে পরিবর্তন হলে এঙ্গেল আপডেট ও Slider সিনক্রোনাইজ হবে
+        function updateGradientFromNumber() {
+            let val = parseInt(gradAngleNum.value) || 0;
+            if (val < 0) val = 0;
+            if (val > 360) val = 360;
+            gradAngleNum.value = val;
+            gradAngleSlider.value = val;
+            applyGradientRender();
+        }
+
         function updateGradient() {
+            updateGradientFromSlider();
+        }
+
+        function applyGradientRender() {
             const hexColor = gradColorPicker.value;
             const opacity = gradOpacitySlider.value / 100;
             const r = parseInt(hexColor.slice(1, 3), 16);
@@ -951,7 +977,6 @@
             if (type === "linear") {
                 gradAngleGroup.style.display = "flex";
                 const angle = gradAngleSlider.value;
-                gradAngleValue.textContent = angle + "°";
                 gradientLayer.style.background = `linear-gradient(${angle}deg, rgba(${r}, ${g}, ${b}, 0) 0%, rgba(${r}, ${g}, ${b}, ${opacity}) 100%)`;
             } else {
                 gradAngleGroup.style.display = "none";
@@ -963,33 +988,44 @@
         function updateGradientPositionFromSliders() {
             gradientLayer.style.left = gradXSlider.value + "px";
             gradientLayer.style.top = gradYSlider.value + "px";
-            gradXValue.textContent = gradXSlider.value + "px";
-            gradYValue.textContent = gradYSlider.value + "px";
+            gradXNum.value = gradXSlider.value;
+            gradYNum.value = gradYSlider.value;
+        }
+
+        function updateGradientPositionFromNumbers() {
+            gradientLayer.style.left = gradXNum.value + "px";
+            gradientLayer.style.top = gradYNum.value + "px";
+            gradXSlider.value = gradXNum.value;
+            gradYSlider.value = gradYNum.value;
         }
 
         function syncSlidersFromGradientDrag(x, y) {
-            gradXSlider.value = Math.round(x);
-            gradYSlider.value = Math.round(y);
-            gradXValue.textContent = gradXSlider.value + "px";
-            gradYValue.textContent = gradYSlider.value + "px";
+            const roundedX = Math.round(x);
+            const roundedY = Math.round(y);
+            gradXSlider.value = roundedX;
+            gradYSlider.value = roundedY;
+            gradXNum.value = roundedX;
+            gradYNum.value = roundedY;
         }
 
-        gradTypeSelect.addEventListener("change", updateGradient);
-        gradAngleSlider.addEventListener("input", updateGradient);
-        gradOpacitySlider.addEventListener("input", updateGradient);
-        gradColorPicker.addEventListener("input", updateGradient);
+        gradTypeSelect.addEventListener("change", applyGradientRender);
+        gradAngleSlider.addEventListener("input", updateGradientFromSlider);
+        gradAngleNum.addEventListener("input", updateGradientFromNumber);
+        gradOpacitySlider.addEventListener("input", applyGradientRender);
+        gradColorPicker.addEventListener("input", applyGradientRender);
+
         gradXSlider.addEventListener("input", updateGradientPositionFromSliders);
         gradYSlider.addEventListener("input", updateGradientPositionFromSliders);
+        gradXNum.addEventListener("input", updateGradientPositionFromNumbers);
+        gradYNum.addEventListener("input", updateGradientPositionFromNumbers);
 
         watermarkInput.addEventListener("input", () => { watermarkText.textContent = watermarkInput.value; });
         scorecardToggle.addEventListener("change", () => { scorecardBox.style.display = scorecardToggle.checked ? "block" : "none"; });
 
-        // Rule of Thirds Grid Toggle
         function toggleGrid(show) {
             document.getElementById('grid-overlay').style.display = show ? 'block' : 'none';
         }
 
-        // One-Tap Alignment System
         function alignActiveItem(alignment) {
             if (!targetedTextElement) {
                 alert("Please click or focus on a text item first!");
@@ -1017,7 +1053,6 @@
                     break;
             }
 
-            // Keep grid snapping (10px grid alignment)
             targetedTextElement.style.left = Math.round(targetLeft / 10) * 10 + "px";
         }
 
@@ -1026,7 +1061,10 @@
             updatePlayerTransform();
             gradientLayer.style.left = "0px"; gradientLayer.style.top = "0px";
             gradXSlider.value = 0; gradYSlider.value = 0;
+            gradXNum.value = 0; gradYNum.value = 0;
+            gradAngleSlider.value = 180; gradAngleNum.value = 180;
             document.getElementById('teamTheme').value = 'custom';
+            updateGradient();
             updateGradientPositionFromSliders();
 
             document.getElementById("title").style.top = "140px"; document.getElementById("title").style.left = "110px";
@@ -1220,14 +1258,13 @@
             const size = parseInt(document.getElementById("sizeSelect").value);
             const oldWTransform = workspace.style.transform;
 
-            // Temporary hide grid during compilation
             const gridState = document.getElementById('gridToggle').checked;
             if (gridState) toggleGrid(false);
 
             workspace.style.transform = "scale(1)";
             html2canvas(document.getElementById("canvas"), { scale: size / 1080, useCORS: true, allowTaint: false, width: 1080, height: 1080 }).then(canvas => {
                 workspace.style.transform = oldWTransform;
-                if (gridState) toggleGrid(true); // Re-enable grid after compile
+                if (gridState) toggleGrid(true);
 
                 const a = document.createElement("a"); a.download = `matchday-poster-${Date.now()}.png`; a.href = canvas.toDataURL(); a.click();
             });

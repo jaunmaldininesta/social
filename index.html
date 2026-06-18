@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Poster Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Studio Pro - Football Poster Creator</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Montserrat:wght@400;600;700;900&display=swap"
+        rel="stylesheet">
 
     <style>
         @font-face {
@@ -13,42 +19,374 @@
                 url("juventus.ttf") format("truetype");
         }
 
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             margin: 0;
-            background: #000;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            background: radial-gradient(circle at 50% 0%, #0f1012 0%, #040506 100%);
+            font-family: 'Montserrat', 'Hind Siliguri', Arial, sans-serif;
+            color: #f3f4f6;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .controls {
+        /* Top Header Area */
+        .app-header {
+            padding: 12px 16px;
+            background: rgba(4, 5, 6, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: center;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #be123c;
+            text-shadow: 0 0 10px rgba(225, 29, 72, 0.4);
+        }
+
+        /* Canvas Live Preview Section */
+        .canvas-section {
+            flex: 1;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            position: relative;
         }
 
-        input,
-        button,
-        select {
-            padding: 8px;
-            font-size: 13px;
+        #viewport-container {
+            width: 100%;
+            max-width: 380px;
+            aspect-ratio: 1 / 1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #020203;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(225, 29, 72, 0.05);
+        }
+
+        #workspace {
+            position: absolute;
+            transform-origin: 0 0;
+            width: 1080px;
+            height: 1080px;
         }
 
         #canvas {
             width: 1080px;
             height: 1080px;
-            position: relative;
+            position: absolute;
             overflow: hidden;
-            background: #111;
+            background: #030304;
+            top: 0;
+            left: 0;
+            font-family: "Juventus", 'Hind Siliguri', Arial, sans-serif;
         }
 
+        /* Ultra Premium Glassmorphic Bottom Sheet */
+        .controls-sheet {
+            background: linear-gradient(180deg, rgba(16, 18, 22, 0.93) 0%, rgba(8, 9, 11, 0.98) 100%);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            flex-direction: column;
+            height: 48vh;
+            box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        /* Premium Tab System */
+        .tab-bar {
+            display: flex;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 8px 14px 0 14px;
+            scrollbar-width: none;
+            gap: 4px;
+        }
+
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            padding: 12px 18px;
+            background: none;
+            border: none;
+            color: #4b5563;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom: 3px solid transparent;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            border-bottom-color: #e11d48;
+            background: linear-gradient(180deg, rgba(225, 29, 72, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Content Area */
+        .tab-contents {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .section-title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* High-End Form UI Controls */
+        .controls-sheet input[type="file"] {
+            display: none;
+        }
+
+        input[type="text"],
+        select {
+            padding: 14px;
+            font-size: 13px;
+            background: rgba(10, 11, 13, 0.7);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            font-family: inherit;
+            width: 100%;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            border-color: #e11d48;
+            box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Master Neon Buttons */
+        button,
+        .upload-btn {
+            padding: 14px;
+            font-size: 13px;
+            font-family: inherit;
+            background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            text-align: center;
+            display: block;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            letter-spacing: 0.5px;
+        }
+
+        button:active,
+        .upload-btn:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.2);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(180deg, #27272a 0%, #18181b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-btn {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: none;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .control-group button {
+            width: auto;
+            min-width: 65px;
+        }
+
+        /* Premium Sliders with Glow Track */
+        .slider-group {
+            display: flex;
+            align-items: center;
+            background: rgba(18, 20, 24, 0.6);
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            font-size: 12px;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .slider-group label {
+            font-weight: 600;
+            color: #9ca3af;
+            white-space: nowrap;
+        }
+
+        .slider-group input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e11d48;
+            box-shadow: 0 0 10px #e11d48;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .slider-group input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.3);
+        }
+
+        .slider-value {
+            min-width: 45px;
+            text-align: right;
+            font-weight: 700;
+            color: #e11d48;
+            text-shadow: 0 0 6px rgba(225, 29, 72, 0.3);
+        }
+
+        /* Custom Toggle Pill Controls */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(18, 20, 24, 0.6);
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            font-size: 12px;
+            color: #9ca3af;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .toggle-group input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 34px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 0;
+        }
+
+        .toggle-group input[type="checkbox"]:checked {
+            background: #e11d48;
+        }
+
+        .toggle-group input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-group input[type="checkbox"]:checked::before {
+            transform: translateX(16px);
+        }
+
+        /* Color Circle Picker */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 42px;
+            height: 28px;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Canvas Element Customization & Alignment Guides */
         .guide-h,
         .guide-v {
             position: absolute;
-            background: rgba(255, 255, 255, 0.25);
+            background: #e11d48;
+            box-shadow: 0 0 8px #e11d48;
             pointer-events: none;
             display: none;
             z-index: 999;
@@ -56,282 +394,849 @@
 
         .guide-h {
             width: 100%;
-            height: 1px;
+            height: 2px;
             top: 50%;
         }
 
         .guide-v {
             height: 100%;
-            width: 1px;
+            width: 2px;
             left: 50%;
+        }
+
+        /* Rule of Thirds Grid Overlay */
+        #grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1080px;
+            height: 1080px;
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        .grid-line-h,
+        .grid-line-v {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .grid-line-h {
+            width: 100%;
+            height: 1px;
+        }
+
+        .grid-line-v {
+            height: 100%;
+            width: 1px;
+        }
+
+        .grid-line-h.h1 {
+            top: 33.33%;
+        }
+
+        .grid-line-h.h2 {
+            top: 66.66%;
+        }
+
+        .grid-line-v.v1 {
+            left: 33.33%;
+        }
+
+        .grid-line-v.v2 {
+            left: 66.66%;
         }
 
         #bg {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
             object-fit: cover;
+            pointer-events: none;
+            transform-origin: center center;
+            transform: translate(-50%, -50%);
+            will-change: transform;
         }
 
         .red-bg {
             position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom,
-                    rgba(0, 0, 0, 0.15),
-                    rgba(0, 0, 0, 0.9));
+            width: 1080px;
+            height: 1080px;
+            touch-action: none;
+            cursor: move;
+            z-index: 5;
         }
 
         .logo {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 95px;
+            height: 95px;
             object-fit: contain;
-            top: 25px;
+            top: 35px;
+            pointer-events: none;
+            z-index: 6;
         }
 
         .logo.left {
-            left: 25px;
+            left: 35px;
         }
 
         .logo.right {
-            right: 25px;
+            right: 35px;
+        }
+
+        #scorecard-box {
+            position: absolute;
+            top: 55px;
+            left: 540px;
+            transform: translateX(-50%);
+            background: rgba(4, 4, 5, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            z-index: 7;
+            display: none;
+            color: #fff;
+            text-align: center;
+        }
+
+        #watermark-text {
+            position: absolute;
+            bottom: 25px;
+            right: 35px;
+            font-size: 15px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.35);
+            z-index: 8;
+            letter-spacing: 1.5px;
+            pointer-events: none;
+            text-transform: uppercase;
         }
 
         .draggable {
             position: absolute;
             cursor: move;
-            user-select: none;
+            touch-action: none;
+            padding: 8px;
+            border: 2px dashed transparent;
+            z-index: 10;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .draggable:focus-within {
+            border-color: #e11d48;
+            background: rgba(225, 29, 72, 0.03);
+            border-radius: 8px;
         }
 
         .title,
         .sub,
         .btn {
             color: #fff;
-            font-family: "Juventus", Arial, sans-serif;
             text-align: center;
-            width: max-content;
+            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
         }
 
         .title {
-            font-size: 34px;
+            width: 860px;
+            font-size: 38px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            line-height: 1.2;
+            word-wrap: break-word;
         }
 
         .sub {
-            font-size: 28px;
+            width: max-content;
+            max-width: 1020px;
+            font-size: 32px;
             font-weight: 800;
             line-height: 1.4;
         }
 
         .highlight {
             display: inline-block;
-            background: #d40000;
-            padding: 6px 14px;
+            background: #e11d48;
+            padding: 2px 14px;
             font-weight: 900;
-            text-transform: uppercase;
+            transform: skewX(-6deg);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+        }
+
+        .highlight * {
+            transform: skewX(6deg);
+            display: inline-block;
         }
 
         .btn {
+            width: max-content;
             display: inline-block;
-            background: #d40000;
-            padding: 10px 20px;
+            background: #e11d48;
+            padding: 14px 28px;
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
+            box-shadow: 0 6px 15px rgba(225, 29, 72, 0.35);
         }
 
         [contenteditable="true"] {
             outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Tablet/Desktop Master Screen Adaptations */
+        @media (min-width: 768px) {
+            body {
+                flex-direction: row;
+                padding: 24px;
+                gap: 24px;
+                height: auto;
+                overflow: auto;
+                min-height: 100vh;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .app-header {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .canvas-section {
+                flex: none;
+                width: 500px;
+                height: 500px;
+                padding: 0;
+            }
+
+            #viewport-container {
+                max-width: 100%;
+            }
+
+            .controls-sheet {
+                width: 440px;
+                height: 650px;
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="controls">
-        <input type="file" id="bgUpload">
-        <input type="text" id="bgURL" placeholder="Player Image URL">
-        <button onclick="setImage('bgURL','#bg')">Set Player URL</button>
+    <div class="app-header">STUDIO PRO // ENGINE v2.0</div>
 
-        <input type="file" id="logo1Upload">
-        <input type="text" id="logo1URL" placeholder="Logo 1 URL">
-        <button onclick="setImage('logo1URL','.logo.left')">Set Logo 1 URL</button>
+    <div class="canvas-section">
+        <div id="viewport-container">
+            <div id="workspace">
+                <div id="canvas">
+                    <div class="guide-h" id="guideH"></div>
+                    <div class="guide-v" id="guideV"></div>
 
-        <input type="file" id="logo2Upload">
-        <input type="text" id="logo2URL" placeholder="Logo 2 URL">
-        <button onclick="setImage('logo2URL','.logo.right')">Set Logo 2 URL</button>
+                    <div id="grid-overlay" style="display: none;">
+                        <div class="grid-line-h h1"></div>
+                        <div class="grid-line-h h2"></div>
+                        <div class="grid-line-v v1"></div>
+                        <div class="grid-line-v v2"></div>
+                    </div>
 
-        <select id="fontPicker" onchange="changeFont(this.value)">
-            <option value="Juventus">Juventus</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Montserrat">Montserrat</option>
-            <option value="Bebas Neue">Bebas Neue</option>
-            <option value="Poppins">Poppins</option>
-        </select>
+                    <img id="bg" src="player.jpg" crossorigin="anonymous">
+                    <div class="red-bg" id="gradientLayer" style="top:0px; left:0px;"></div>
 
-        <select id="sizeSelect">
-            <option value="1080">1080 × 1080</option>
-            <option value="2000">2000 × 2000</option>
-        </select>
+                    <img class="logo left" src="logo1.png" crossorigin="anonymous">
+                    <img class="logo right" src="logo2.png" crossorigin="anonymous">
 
-        <button id="downloadBtn">Download Poster</button>
+                    <div id="scorecard-box" contenteditable="true">VS</div>
+                    <div id="watermark-text">@ACMilanBD</div>
+
+                    <div id="title" class="draggable title" contenteditable="true" style="top:140px; left:110px;">
+                        THE STRUGGLE FOR MINUTES:
+                    </div>
+
+                    <div id="sub" class="draggable sub" contenteditable="true"
+                        style="top:520px; left:540px; transform: translate(-50%, 0);">
+                        <span class="highlight"><span>MAX IBRAHIMOVIĆ</span></span> AT <span
+                            class="highlight"><span>AJAX</span></span>
+                    </div>
+
+                    <div id="btn" class="draggable btn" contenteditable="true"
+                        style="top:780px; left:540px; transform: translate(-50%, 0);">
+                        READ MORE
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="canvas">
-
-        <div class="guide-h" id="guideH"></div>
-        <div class="guide-v" id="guideV"></div>
-
-        <img id="bg" src="player.jpg">
-        <div class="red-bg"></div>
-
-        <img class="logo left" src="logo1.png">
-        <img class="logo right" src="logo2.png">
-
-        <div id="title" class="draggable title" contenteditable="true" style="top:140px; left:540px;">
-            THE STRUGGLE FOR MINUTES:
+    <div class="controls-sheet">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('theme-tab')">Identity</button>
+            <button class="tab-btn" onclick="switchTab('images-tab')">Assets</button>
+            <button class="tab-btn" onclick="switchTab('layout-tab')">Layout</button>
+            <button class="tab-btn" onclick="switchTab('light-tab')">Lighting</button>
+            <button class="tab-btn" onclick="switchTab('export-tab')">Render</button>
         </div>
 
-        <div id="sub" class="draggable sub" contenteditable="true" style="top:520px; left:540px;">
-            <span class="highlight">MAX IBRAHIMOVIĆ</span> AT
-            <span class="highlight">AJAX</span>
-        </div>
+        <div class="tab-contents">
+            <div id="theme-tab" class="tab-content active">
+                <div class="section-title">Club Core Preset Matrix</div>
+                <select id="teamTheme" onchange="applyTeamTheme(this.value)">
+                    <option value="custom">-- Custom Canvas Style --</option>
+                    <option value="acmilan">AC Milan (Red/Black)</option>
+                    <option value="realmadrid">Real Madrid (Gold/Dark)</option>
+                    <option value="barcelona">FC Barcelona (Blue/Blaugrana)</option>
+                    <option value="mancity">Man City (Sky Blue)</option>
+                    <option value="argentina">Argentina (Sky/White)</option>
+                    <option value="brazil">Brazil (Yellow/Green)</option>
+                    <option value="portugal">Portugal (Red/Green)</option>
+                </select>
+                <div class="slider-group">
+                    <label>Highlight Accent Color:</label>
+                    <input type="color" id="highlightColorPicker" value="#e11d48"
+                        oninput="updateHighlightColor(this.value)">
+                </div>
+            </div>
 
-        <div id="btn" class="draggable btn" contenteditable="true" style="top:780px; left:540px;">
-            READ MORE
-        </div>
+            <div id="images-tab" class="tab-content">
+                <div class="section-title">Media Superstructure</div>
+                <div class="control-group">
+                    <label for="bgUpload" class="upload-btn">Player Img</label>
+                    <input type="file" id="bgUpload" accept="image/*">
+                    <input type="text" id="bgURL" placeholder="Player CDN Image Link">
+                    <button onclick="setImage('bgURL','#bg')">Load</button>
+                </div>
+                <div class="control-group">
+                    <label for="logo1Upload" class="upload-btn">Logo Left</label>
+                    <input type="file" id="logo1Upload" accept="image/*">
+                    <input type="text" id="logo1URL" placeholder="Logo L Link">
+                    <button onclick="setImage('logo1URL','.logo.left')">Load</button>
+                </div>
+                <div class="control-group">
+                    <label for="logo2Upload" class="upload-btn">Logo Right</label>
+                    <input type="file" id="logo2Upload" accept="image/*">
+                    <input type="text" id="logo2URL" placeholder="Logo R Link">
+                    <button onclick="setImage('logo2URL','.logo.right')">Load</button>
+                </div>
+            </div>
 
+            <div id="layout-tab" class="tab-content">
+                <div class="section-title">Smart Alignment & Helpers</div>
+                <div style="display: flex; gap: 10px; margin-bottom: 2px;">
+                    <div class="toggle-group">
+                        <input type="checkbox" id="gridToggle" onchange="toggleGrid(this.checked)">
+                        <label for="gridToggle">Show 3x3 Grid</label>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 4px;">
+                    <button class="btn-secondary" onclick="alignActiveItem('left')"
+                        style="padding: 10px; font-size: 11px;">Align Left</button>
+                    <button class="btn-secondary" onclick="alignActiveItem('center')"
+                        style="padding: 10px; font-size: 11px;">Center</button>
+                    <button class="btn-secondary" onclick="alignActiveItem('right')"
+                        style="padding: 10px; font-size: 11px;">Align Right</button>
+                </div>
+
+                <div class="section-title">Workspace Locks & Overlays</div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="toggle-group">
+                        <input type="checkbox" id="lockPlayerCheck">
+                        <label for="lockPlayerCheck">Lock Player</label>
+                    </div>
+                    <div class="toggle-group">
+                        <input type="checkbox" id="lockGradientCheck">
+                        <label for="lockGradientCheck">Lock Vignette</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="watermarkInput" placeholder="Watermark Handle" value="@ACMilanBD">
+                    <div class="toggle-group" style="max-width: 125px;">
+                        <input type="checkbox" id="scorecardToggle">
+                        <label for="scorecardToggle">Score Box</label>
+                    </div>
+                </div>
+                <div class="slider-group">
+                    <label for="textScaleSlider">Active Item Font Size:</label>
+                    <input type="range" id="textScaleSlider" min="10" max="150" value="34" disabled>
+                    <span id="sliderValue" class="slider-value">--</span>
+                </div>
+            </div>
+
+            <div id="light-tab" class="tab-content">
+                <div class="section-title">Atmosphere Light Mapping</div>
+                <div class="slider-group">
+                    <label>Geometry Vector:</label>
+                    <select id="gradTypeSelect" style="width: auto; padding: 6px 12px;">
+                        <option value="linear">Linear Gradient</option>
+                        <option value="radial">Radial Vignette</option>
+                    </select>
+                </div>
+                <div class="slider-group" id="gradAngleGroup">
+                    <label for="gradAngleSlider">Light Ray Angle:</label>
+                    <input type="range" id="gradAngleSlider" min="0" max="360" value="180">
+                    <span id="gradAngleValue" class="slider-value">180°</span>
+                </div>
+                <div class="slider-group">
+                    <label for="gradOpacitySlider">Vignette Darkness:</label>
+                    <input type="range" id="gradOpacitySlider" min="0" max="100" value="50">
+                    <span id="gradOpacityValue" class="slider-value">50%</span>
+                </div>
+                <div class="slider-group">
+                    <label>Ambient Atmospheric Tint:</label>
+                    <input type="color" id="gradColorPicker" value="#000000">
+                </div>
+                <div class="slider-group">
+                    <label for="gradXSlider">Translate X Axis:</label>
+                    <input type="range" id="gradXSlider" min="-1080" max="1080" value="0">
+                    <span id="gradXValue" class="slider-value">0px</span>
+                </div>
+                <div class="slider-group">
+                    <label for="gradYSlider">Translate Y Axis:</label>
+                    <input type="range" id="gradYSlider" min="-1080" max="1080" value="0">
+                    <span id="gradYValue" class="slider-value">0px</span>
+                </div>
+            </div>
+
+            <div id="export-tab" class="tab-content">
+                <div class="section-title">Typography & Render Engine</div>
+                <select id="fontPicker" onchange="changeFont(this.value)" style="margin-bottom: 4px;">
+                    <optgroup label="English Fonts">
+                        <option value="Juventus">Juventus Display</option>
+                        <option value="Roboto">Roboto Condensed</option>
+                        <option value="Montserrat">Montserrat Bold</option>
+                        <option value="Bebas Neue">Bebas Neue High</option>
+                        <option value="Poppins">Poppins Heavy</option>
+                    </optgroup>
+                    <optgroup label="Bangla Display Fonts">
+                        <option value="Hind Siliguri, 400">Hind Siliguri Regular</option>
+                        <option value="Hind Siliguri, 600">Hind Siliguri SemiBold</option>
+                        <option value="Hind Siliguri, 700">Hind Siliguri Bold</option>
+                    </optgroup>
+                </select>
+                <select id="sizeSelect" style="margin-bottom: 12px;">
+                    <option value="1080">1080px (Standard Square HD)</option>
+                    <option value="2000">2000px (4K Ultra-HD Pro Studio)</option>
+                </select>
+                <button id="downloadBtn" style="padding: 16px; font-size: 13px; font-weight:900;">COMPILE MASTER
+                    ARTWORK</button>
+                <button class="btn-secondary" onclick="resetAllLayers()"
+                    style="margin-top: 8px; padding: 12px; font-size: 11px;">Purge / Reset Canvas</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
-        const fonts = {
+        // Premium Tab switching controller
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        const teamThemes = {
+            acmilan: { highlight: '#e11d48', grad: '#000000', opacity: 70, type: 'linear', angle: 180, x: 0, y: 0 },
+            realmadrid: { highlight: '#C1A162', grad: '#0c0d0e', opacity: 75, type: 'radial', angle: 180, x: 0, y: 0 },
+            barcelona: { highlight: '#004d98', grad: '#a50044', opacity: 55, type: 'linear', angle: 135, x: 0, y: 0 },
+            mancity: { highlight: '#6CABDD', grad: '#0b0c10', opacity: 65, type: 'linear', angle: 180, x: 0, y: 0 },
+            argentina: { highlight: '#75AADB', grad: '#ffffff', opacity: 45, type: 'linear', angle: 180, x: 0, y: 0 },
+            brazil: { highlight: '#FFDF00', grad: '#009B3A', opacity: 50, type: 'linear', angle: 180, x: 0, y: 0 },
+            portugal: { highlight: '#e11d48', grad: '#006600', opacity: 60, type: 'linear', angle: 180, x: 0, y: 0 }
+        };
+
+        function applyTeamTheme(key) {
+            if (key === 'custom') return;
+            const theme = teamThemes[key];
+
+            updateHighlightColor(theme.highlight);
+            document.getElementById('highlightColorPicker').value = theme.highlight;
+            document.getElementById('gradColorPicker').value = theme.grad;
+            document.getElementById('gradOpacitySlider').value = theme.opacity;
+            document.getElementById('gradTypeSelect').value = theme.type;
+            document.getElementById('gradAngleSlider').value = theme.angle;
+            document.getElementById('gradXSlider').value = theme.x;
+            document.getElementById('gradYSlider').value = theme.y;
+
+            updateGradient();
+            updateGradientPositionFromSliders();
+        }
+
+        function updateHighlightColor(color) {
+            document.querySelectorAll('.highlight').forEach(el => el.style.backgroundColor = color);
+            document.getElementById('btn').style.backgroundColor = color;
+        }
+
+        const googleFonts = {
             "Roboto": "Roboto:wght@400;700;900",
             "Montserrat": "Montserrat:wght@400;700;900",
             "Bebas Neue": "Bebas+Neue",
             "Poppins": "Poppins:wght@400;700;900"
         };
 
-        function changeFont(f) {
-            if (f === "Juventus") {
-                document.getElementById("canvas").style.fontFamily = "Juventus, Arial";
+        function changeFont(value) {
+            const canvas = document.getElementById("canvas");
+            if (value.startsWith("Hind Siliguri")) {
+                const parts = value.split(", ");
+                canvas.style.fontFamily = `'Hind Siliguri', Arial, sans-serif`;
+                canvas.style.fontWeight = parts[1];
+                return;
+            }
+            if (value === "Juventus") {
+                canvas.style.fontFamily = `"Juventus", Arial, sans-serif`;
+                canvas.style.fontWeight = "900";
+                return;
+            }
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = `https://fonts.googleapis.com/css2?family=${googleFonts[value]}&display=swap`;
+            document.head.appendChild(link);
+            canvas.style.fontFamily = `"${value}", Arial, sans-serif`;
+        }
+
+        const viewContainer = document.getElementById("viewport-container");
+        const workspace = document.getElementById("workspace");
+        const bgImg = document.getElementById("bg");
+        const guideH = document.getElementById("guideH");
+        const guideV = document.getElementById("guideV");
+        const textScaleSlider = document.getElementById("textScaleSlider");
+        const sliderValueDisplay = document.getElementById("sliderValue");
+
+        const gradientLayer = document.getElementById("gradientLayer");
+        const gradTypeSelect = document.getElementById("gradTypeSelect");
+        const gradAngleSlider = document.getElementById("gradAngleSlider");
+        const gradAngleValue = document.getElementById("gradAngleValue");
+        const gradAngleGroup = document.getElementById("gradAngleGroup");
+        const gradOpacitySlider = document.getElementById("gradOpacitySlider");
+        const gradOpacityValue = document.getElementById("gradOpacityValue");
+        const gradColorPicker = document.getElementById("gradColorPicker");
+        const gradXSlider = document.getElementById("gradXSlider");
+        const gradYSlider = document.getElementById("gradYSlider");
+        const gradXValue = document.getElementById("gradXValue");
+        const gradYValue = document.getElementById("gradYValue");
+
+        const lockPlayerCheck = document.getElementById("lockPlayerCheck");
+        const lockGradientCheck = document.getElementById("lockGradientCheck");
+        const scorecardToggle = document.getElementById("scorecardToggle");
+        const scorecardBox = document.getElementById("scorecard-box");
+        const watermarkInput = document.getElementById("watermarkInput");
+        const watermarkText = document.getElementById("watermark-text");
+
+        let targetedTextElement = null;
+        let baseZoom = 1;
+        let imgX = 0, imgY = 0, imgScale = 1;
+        let startImgX = 0, startImgY = 0, startImgScale = 1;
+        let isMovingImage = false;
+        let isPinchingImage = false;
+        let startTouchesDist = 0;
+        let touchStartPanX = 0, touchStartPanY = 0;
+
+        function updateGradient() {
+            const hexColor = gradColorPicker.value;
+            const opacity = gradOpacitySlider.value / 100;
+            const r = parseInt(hexColor.slice(1, 3), 16);
+            const g = parseInt(hexColor.slice(3, 5), 16);
+            const b = parseInt(hexColor.slice(5, 7), 16);
+
+            const type = gradTypeSelect.value;
+            if (type === "linear") {
+                gradAngleGroup.style.display = "flex";
+                const angle = gradAngleSlider.value;
+                gradAngleValue.textContent = angle + "°";
+                gradientLayer.style.background = `linear-gradient(${angle}deg, rgba(${r}, ${g}, ${b}, 0) 0%, rgba(${r}, ${g}, ${b}, ${opacity}) 100%)`;
+            } else {
+                gradAngleGroup.style.display = "none";
+                gradientLayer.style.background = `radial-gradient(circle, rgba(${r}, ${g}, ${b}, 0) 20%, rgba(${r}, ${g}, ${b}, ${opacity}) 100%)`;
+            }
+            gradOpacityValue.textContent = gradOpacitySlider.value + "%";
+        }
+
+        function updateGradientPositionFromSliders() {
+            gradientLayer.style.left = gradXSlider.value + "px";
+            gradientLayer.style.top = gradYSlider.value + "px";
+            gradXValue.textContent = gradXSlider.value + "px";
+            gradYValue.textContent = gradYSlider.value + "px";
+        }
+
+        function syncSlidersFromGradientDrag(x, y) {
+            gradXSlider.value = Math.round(x);
+            gradYSlider.value = Math.round(y);
+            gradXValue.textContent = gradXSlider.value + "px";
+            gradYValue.textContent = gradYSlider.value + "px";
+        }
+
+        gradTypeSelect.addEventListener("change", updateGradient);
+        gradAngleSlider.addEventListener("input", updateGradient);
+        gradOpacitySlider.addEventListener("input", updateGradient);
+        gradColorPicker.addEventListener("input", updateGradient);
+        gradXSlider.addEventListener("input", updateGradientPositionFromSliders);
+        gradYSlider.addEventListener("input", updateGradientPositionFromSliders);
+
+        watermarkInput.addEventListener("input", () => { watermarkText.textContent = watermarkInput.value; });
+        scorecardToggle.addEventListener("change", () => { scorecardBox.style.display = scorecardToggle.checked ? "block" : "none"; });
+
+        // Rule of Thirds Grid Toggle
+        function toggleGrid(show) {
+            document.getElementById('grid-overlay').style.display = show ? 'block' : 'none';
+        }
+
+        // One-Tap Alignment System
+        function alignActiveItem(alignment) {
+            if (!targetedTextElement) {
+                alert("Please click or focus on a text item first!");
                 return;
             }
 
-            const link = document.createElement("link");
-            link.rel = "stylesheet";
-            link.href = `https://fonts.googleapis.com/css2?family=${fonts[f]}&display=swap`;
-            document.head.appendChild(link);
+            const canvasWidth = 1080;
+            const itemWidth = targetedTextElement.offsetWidth;
 
-            document.getElementById("canvas").style.fontFamily = `"${f}", Arial`;
+            if (targetedTextElement.style.transform.includes("translate")) {
+                targetedTextElement.style.transform = "none";
+            }
+
+            let targetLeft = 0;
+
+            switch (alignment) {
+                case 'left':
+                    targetLeft = 110;
+                    break;
+                case 'center':
+                    targetLeft = (canvasWidth - itemWidth) / 2;
+                    break;
+                case 'right':
+                    targetLeft = canvasWidth - itemWidth - 110;
+                    break;
+            }
+
+            // Keep grid snapping (10px grid alignment)
+            targetedTextElement.style.left = Math.round(targetLeft / 10) * 10 + "px";
         }
 
-        document.getElementById("downloadBtn").addEventListener("click", () => {
-            const size = parseInt(document.getElementById("sizeSelect").value);
+        function resetAllLayers() {
+            imgX = 0; imgY = 0; imgScale = 1;
+            updatePlayerTransform();
+            gradientLayer.style.left = "0px"; gradientLayer.style.top = "0px";
+            gradXSlider.value = 0; gradYSlider.value = 0;
+            document.getElementById('teamTheme').value = 'custom';
+            updateGradientPositionFromSliders();
 
-            html2canvas(document.getElementById("canvas"), {
-                scale: size / 1080,
-                useCORS: true,
-                backgroundColor: null,
-                width: 1080,
-                height: 1080
-            }).then(canvas => {
-                const a = document.createElement("a");
-                a.download = `football-poster-${size}.png`;
-                a.href = canvas.toDataURL("image/png");
-                a.click();
+            document.getElementById("title").style.top = "140px"; document.getElementById("title").style.left = "110px";
+            document.getElementById("sub").style.top = "520px"; document.getElementById("sub").style.left = "540px"; document.getElementById("sub").style.transform = "translate(-50%, 0)";
+            document.getElementById("btn").style.top = "780px"; document.getElementById("btn").style.left = "540px"; document.getElementById("btn").style.transform = "translate(-50%, 0)";
+        }
+
+        function initFit() {
+            baseZoom = viewContainer.clientWidth / 1080;
+            workspace.style.transform = `scale(${baseZoom})`;
+        }
+        window.addEventListener("load", () => { initFit(); updateGradient(); });
+        window.addEventListener("resize", initFit);
+
+        function attachTextScalingListeners() {
+            document.querySelectorAll(".draggable").forEach(el => {
+                el.addEventListener("focus", () => {
+                    targetedTextElement = el;
+                    textScaleSlider.disabled = false;
+                    const currentSize = parseInt(el.style.fontSize) || parseInt(window.getComputedStyle(el).fontSize);
+                    textScaleSlider.value = currentSize;
+                    sliderValueDisplay.textContent = currentSize + "px";
+                });
             });
+
+            textScaleSlider.addEventListener("input", (e) => {
+                if (targetedTextElement) {
+                    const targetVal = e.target.value;
+                    targetedTextElement.style.fontSize = targetVal + "px";
+                    sliderValueDisplay.textContent = targetVal + "px";
+                }
+            });
+        }
+        attachTextScalingListeners();
+
+        function updatePlayerTransform() {
+            bgImg.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${imgScale})`;
+        }
+
+        let active = null;
+        let offsetX = 0, offsetY = 0;
+
+        function handleStart(clientX, clientY, targetEl) {
+            if (targetEl.id === "gradientLayer" && lockGradientCheck.checked) return;
+
+            active = targetEl;
+            if (active.style.transform.includes("translate")) {
+                const rect = active.getBoundingClientRect();
+                const canvRect = document.getElementById("canvas").getBoundingClientRect();
+                active.style.left = ((rect.left - canvRect.left) / baseZoom) + "px";
+                active.style.transform = "none";
+            }
+            const elLeft = parseFloat(active.style.left) || 0;
+            const elTop = parseFloat(active.style.top) || 0;
+            const canvRect = document.getElementById("canvas").getBoundingClientRect();
+            offsetX = ((clientX - canvRect.left) / baseZoom) - elLeft;
+            offsetY = ((clientY - canvRect.top) / baseZoom) - elTop;
+        }
+
+        function handleMove(clientX, clientY) {
+            if (!active) return;
+            const canvRect = document.getElementById("canvas").getBoundingClientRect();
+            let x = (clientX - canvRect.left) / baseZoom - offsetX;
+            let y = (clientY - canvRect.top) / baseZoom - offsetY;
+
+            if (active.id === "gradientLayer") {
+                active.style.left = x + "px"; active.style.top = y + "px";
+                syncSlidersFromGradientDrag(x, y);
+                return;
+            }
+
+            const cx = 540, cy = 540, SNAP = 25, GRID = 10;
+            guideH.style.display = "block"; guideV.style.display = "block";
+            guideH.style.top = cy + "px"; guideV.style.left = cx + "px";
+
+            if (Math.abs(x + active.offsetWidth / 2 - cx) < SNAP) {
+                x = cx - active.offsetWidth / 2; guideV.style.boxShadow = "0 0 8px #e11d48";
+            } else { guideV.style.boxShadow = "none"; }
+
+            if (Math.abs(y + active.offsetHeight / 2 - cy) < SNAP) {
+                y = cy - active.offsetHeight / 2; guideH.style.boxShadow = "0 0 8px #e11d48";
+            } else { guideH.style.boxShadow = "none"; }
+
+            x = Math.round(x / GRID) * GRID;
+            y = Math.round(y / GRID) * GRID;
+            active.style.left = x + "px"; active.style.top = y + "px";
+        }
+
+        const handleEnd = () => {
+            active = null; isMovingImage = false; isPinchingImage = false;
+            guideH.style.display = "none"; guideV.style.display = "none";
+        };
+
+        function bindDragElement(el) {
+            el.addEventListener("mousedown", (e) => {
+                if (e.button !== 0 || document.activeElement === el) return;
+                handleStart(e.clientX, e.clientY, el);
+                e.stopPropagation();
+            });
+            el.addEventListener("touchstart", (e) => {
+                if (document.activeElement === el) return;
+                handleStart(e.touches[0].clientX, e.touches[0].clientY, el);
+                e.stopPropagation();
+            }, { passive: true });
+        }
+
+        document.querySelectorAll(".draggable").forEach(bindDragElement);
+        bindDragElement(gradientLayer);
+
+        viewContainer.addEventListener("wheel", (e) => {
+            if (lockPlayerCheck.checked) return;
+            e.preventDefault();
+            imgScale = e.deltaY < 0 ? Math.min(6, imgScale + 0.08) : Math.max(0.1, imgScale - 0.08);
+            updatePlayerTransform();
+        }, { passive: false });
+
+        viewContainer.addEventListener("mousedown", (e) => {
+            if (active || e.button !== 0 || lockPlayerCheck.checked) return;
+            isMovingImage = true;
+            touchStartPanX = e.clientX; touchStartPanY = e.clientY;
+            startImgX = imgX; startImgY = imgY;
         });
 
-        function bindUpload(id, target) {
+        viewContainer.addEventListener("touchstart", (e) => {
+            if (active || lockPlayerCheck.checked) return;
+            if (e.touches.length === 1) {
+                isMovingImage = true;
+                touchStartPanX = e.touches[0].clientX; touchStartPanY = e.touches[0].clientY;
+                startImgX = imgX; startImgY = imgY;
+            } else if (e.touches.length === 2) {
+                isMovingImage = false; isPinchingImage = true;
+                startTouchesDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                startImgScale = imgScale;
+            }
+        }, { passive: true });
+
+        window.addEventListener("mousemove", (e) => {
+            if (active) handleMove(e.clientX, e.clientY);
+            else if (isMovingImage) {
+                imgX = startImgX + (e.clientX - touchStartPanX) / baseZoom;
+                imgY = startImgY + (e.clientY - touchStartPanY) / baseZoom;
+                updatePlayerTransform();
+            }
+        });
+
+        window.addEventListener("touchmove", (e) => {
+            if (active && e.touches.length === 1) {
+                handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                if (e.cancelable) e.preventDefault();
+            } else if (isMovingImage && e.touches.length === 1) {
+                imgX = startImgX + (e.touches[0].clientX - touchStartPanX) / baseZoom;
+                imgY = startImgY + (e.touches[0].clientY - touchStartPanY) / baseZoom;
+                updatePlayerTransform();
+                if (e.cancelable) e.preventDefault();
+            } else if (isPinchingImage && e.touches.length === 2) {
+                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                imgScale = Math.max(0.1, Math.min(6, startImgScale * (currentDist / startTouchesDist)));
+                updatePlayerTransform();
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener("mouseup", handleEnd);
+        window.addEventListener("touchend", handleEnd);
+
+        function bindUpload(id, selector) {
             document.getElementById(id).addEventListener("change", e => {
                 const file = e.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
-                reader.onload = ev => {
-                    document.querySelector(target).src = ev.target.result;
+                reader.onload = function (event) {
+                    const img = document.querySelector(selector);
+                    img.crossOrigin = "anonymous"; img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             });
         }
-
         bindUpload("bgUpload", "#bg");
         bindUpload("logo1Upload", ".logo.left");
         bindUpload("logo2Upload", ".logo.right");
 
-        function setImage(id, sel) {
-            const url = document.getElementById(id).value.trim();
-            if (url) document.querySelector(sel).src = url;
+        function setImage(inputId, selector) {
+            const urlInput = document.getElementById(inputId).value.trim();
+            if (!urlInput) return;
+            const img = document.querySelector(selector);
+            img.crossOrigin = "anonymous";
+            img.src = "https://corsproxy.io/?" + encodeURIComponent(urlInput);
         }
 
-        const guideH = document.getElementById("guideH");
-        const guideV = document.getElementById("guideV");
+        document.getElementById("downloadBtn").addEventListener("click", () => {
+            const size = parseInt(document.getElementById("sizeSelect").value);
+            const oldWTransform = workspace.style.transform;
 
-        let active = null;
-        let offsetX = 0;
-        let offsetY = 0;
+            // Temporary hide grid during compilation
+            const gridState = document.getElementById('gridToggle').checked;
+            if (gridState) toggleGrid(false);
 
-        document.querySelectorAll(".draggable").forEach(el => {
-            el.addEventListener("mousedown", (e) => {
-                active = el;
-                offsetX = e.clientX - el.offsetLeft;
-                offsetY = e.clientY - el.offsetTop;
+            workspace.style.transform = "scale(1)";
+            html2canvas(document.getElementById("canvas"), { scale: size / 1080, useCORS: true, allowTaint: false, width: 1080, height: 1080 }).then(canvas => {
+                workspace.style.transform = oldWTransform;
+                if (gridState) toggleGrid(true); // Re-enable grid after compile
+
+                const a = document.createElement("a"); a.download = `matchday-poster-${Date.now()}.png`; a.href = canvas.toDataURL(); a.click();
             });
         });
-
-        // 🔥 CANVA / FIGMA STYLE SNAP (CENTER + GRID)
-        document.addEventListener("mousemove", (e) => {
-            if (!active) return;
-
-            let x = e.clientX - offsetX;
-            let y = e.clientY - offsetY;
-
-            const cx = 540;
-            const cy = 540;
-
-            const SNAP_CENTER = 20;
-            const GRID = 20;
-
-            guideH.style.display = "block";
-            guideV.style.display = "block";
-
-            guideH.style.top = cy + "px";
-            guideV.style.left = cx + "px";
-
-            // CENTER SNAP
-            if (Math.abs(x - cx) < SNAP_CENTER) {
-                x = cx;
-                guideV.style.background = "red";
-            } else {
-                guideV.style.background = "rgba(255,255,255,0.25)";
-            }
-
-            if (Math.abs(y - cy) < SNAP_CENTER) {
-                y = cy;
-                guideH.style.background = "red";
-            } else {
-                guideH.style.background = "rgba(255,255,255,0.25)";
-            }
-
-            // GRID SNAP (CANVA STYLE)
-            x = Math.round(x / GRID) * GRID;
-            y = Math.round(y / GRID) * GRID;
-
-            active.style.left = x + "px";
-            active.style.top = y + "px";
-        });
-
-        document.addEventListener("mouseup", () => {
-            active = null;
-            guideH.style.display = "none";
-            guideV.style.display = "none";
-        });
     </script>
-
 </body>
 
 </html>
